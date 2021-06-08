@@ -55,8 +55,8 @@ stages:
       vmImage: Ubuntu-16.04
     jobs:
       - template: ./build.yml
-        parameters:
-          package: $(package)
+#        parameters:
+#          package: $(package)
 #          tag: $(_NEXT_RELEASE_TAG)
 
 #  - stage: CD

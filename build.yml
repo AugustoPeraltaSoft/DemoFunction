@@ -1,7 +1,7 @@
-parameters:
-  - name: 'package'
-    default: false
-  - name: 'tag'
+#parameters:
+#  - name: 'package'
+#    default: false
+#  - name: 'tag'
 
 jobs:
   - job: Build
@@ -19,7 +19,7 @@ jobs:
       #   displayName: IntegrationTest
 
   - job: Package
-    condition: and(succeeded(), eq(variables['package'], true))
+ #   condition: and(succeeded(), eq(variables['package'], true))
     steps:
       # Run to package
       - script: yarn install --production
@@ -32,4 +32,4 @@ jobs:
         displayName: publish package
         inputs:
           targetPath: '$(Pipeline.Workspace)'
-          artifact: 'build-${{ parameters.tag }}.zip'
+          artifact: 'build.zip'
