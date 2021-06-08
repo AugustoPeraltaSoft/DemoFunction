@@ -2,18 +2,18 @@
 
 name: $(Date:yyyyMMdd)$(Rev:.r)
 
-trigger:
-  branches:
-    include:
+#trigger:
+#  branches:
+#    include:
 #      - alpha
-      - monolithic
-  paths:
-    exclude:
-      - docs/*
+#      - monolithic
+#  paths:
+#    exclude:
+#      - docs/*
 
-pr:
+#pr:
 #  - alpha
-  - main
+#  - main
 
 resources:
   - repo: self
