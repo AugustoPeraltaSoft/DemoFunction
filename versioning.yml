@@ -1,0 +1,25 @@
+parameters:
+  - name: 'GHToken'
+
+jobs:
+  - job: Tag
+
+    steps:
+#      - script: yarn install
+#        displayName: 'install'
+      # Configure Github
+      - script: |
+            git config --global user.email "augusto.peralta@softvision.com"
+            git config --global user.name "AugustoPeraltaSoft"
+            git remote rm origin
+            git remote add origin https://${{ parameters.GHToken }}@github.com/AugustoPeraltaSoft/functionsmonorepo.git
+            git fetch origin
+            git checkout main
+      # Update the version of the changed packages
+      - script: yarn run new-version
+        displayName: 'Tag version'
+      # Set the variables with the last two tags
+      - powershell: |
+          echo "##vso[task.setvariable variable=Tag;isOutput=true]$((-split $(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=2)))[1])"
+          echo "##vso[task.setvariable variable=LTag;isOutput=true]$((-split $(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=2)))[0])"
+        name: setOutputVar

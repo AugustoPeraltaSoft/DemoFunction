@@ -1,0 +1,66 @@
+# File: azure-pipelines.yaml
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/*
+
+pr:
+  - main
+
+resources:
+  - repo: self
+
+variables:
+  - template: variables.yaml
+
+stages:
+
+  - stage: TAG
+    displayName: Versioning Packages 
+    variables:
+          GH_TOKEN: $(GitHubToken)
+#         _NPM_TOKEN: $(NpmToken)
+    pool:
+        vmImage: 'vs2017-win2016'
+    jobs:
+      - template: ./versioning.yml
+        parameters:
+          GHToken: $(GH_TOKEN)
+
+  - stage: CI
+    displayName: Continuous Integration
+    dependsOn: TAG
+    variables:
+      _TAG: $[ stageDependencies.TAG.Tag.outputs['setOutputVar.Tag'] ]
+      _LTAG: $[ stageDependencies.TAG.Tag.outputs['setOutputVar.LTag'] ]
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    jobs:
+      - template: ./build.yml
+        parameters:
+          tag: $(_TAG)
+          lastTag: $(_LTAG)
+      
+  - stage: CD
+    displayName: Continuous Deployment
+#    condition:
+    dependsOn: CI 
+    variables:
+      _TAG: $[ stageDependencies.TAG.Tag.outputs['setOutputVar.Tag'] ]
+    jobs:
+      - template: ./deploy.yml
+        parameters:
+          buildLocation: $(Pipeline.Workspace)/**/*.zip
+          resourceGroupName: $(serviceConnectionRG)
+          azureSubscription: $(serviceConnection)
+          environment: '$(pushBranch)'
+          appName: '$(appName)'
+          notifyUsers: '$(notifyUsers)'
+          tag: '$(_TAG)'

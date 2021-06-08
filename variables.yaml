@@ -1,0 +1,17 @@
+variables:
+  - name: buildLocation
+    value: $(Pipeline.Workspace)/**/*.zip
+  - name: serviceConnectionRG
+    value: 'DemoNode'
+  - name: serviceConnection
+    value: 'DemoNode'
+  - name: environment
+    value: QA
+  - name: appName
+    value: 'monorepo'
+  - name: notifyUsers
+    value: 'augusto.peralta.demo@gmail.com'  
+#  - name: GitHubToken
+#    value: $(GITHUB-TOKEN)
+#  - name: NpmToken
+#    value: $(NPM-TOKEN)

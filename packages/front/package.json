@@ -1,0 +1,13 @@
+{
+  "name": "@gskTest/front",
+  "version": "1.21.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo Front works awesome!",
+    "build": "echo building Front @@@@@@@@@@",
+    "ci:build": "yarn run build",
+    "pack": "npm-pack-zip",
+    "zip": "npm run pack"
+  }
+}

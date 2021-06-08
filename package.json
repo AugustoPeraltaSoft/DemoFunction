@@ -1,0 +1,31 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "lerna run test",
+    "test-common": "lerna run test --scope=@gskTest/common",
+    "test-deps": "lerna run test --scope={@gskTest/server,@gskTest/front}",
+    "new-version": "lerna version --conventional-commits --yes",
+    "diff": "lerna diff",
+    "changed": "lerna changed",
+    "list": "lerna list",
+    "ci:build": "lerna run ci:build",
+    "ci:zip": "lerna run zip"
+  },
+  "name": "yarn-workspaces",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "lerna": "^3.22.1",
+    "npm-pack-zip": "^1.2.9"
+  },
+  "dependencies": {
+    "@lerna/changed": "^4.0.0",
+    "durable-functions": "^1.4.6",
+    "npm-pack-all": "^1.12.7",
+    "azure-functions-pack": "^1.0.0"
+  }
+}
