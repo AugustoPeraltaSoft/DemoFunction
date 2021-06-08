@@ -48,7 +48,7 @@ jobs:
       # publish package as artifact
       - task: CopyFiles@2
         inputs:
-          SourceFolder: '/home/vsts/work/1/s/packages/app'
+          SourceFolder: '/home/vsts/work/1/s'
           Contents: '*.zip'
           TargetFolder: '$(Build.ArtifactStagingDirectory)/functionapp'
 
