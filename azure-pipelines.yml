@@ -59,18 +59,18 @@ stages:
 #          package: $(package)
 #          tag: $(_NEXT_RELEASE_TAG)
 
-#  - stage: CD
-#    displayName: Continuous Deployment
+  - stage: CD
+    displayName: Continuous Deployment
 #    variables:
 #      _NEXT_RELEASE_TAG: $[ stageDependencies.Tag.release.outputs['setOutputVar.versionNumber'] ]
 #    condition: 
-#    jobs:
-#      - template: ./deploy.yml
-#        parameters:
-#          buildLocation: $(Pipeline.Workspace)/**/*-$(_NEXT_RELEASE_TAG).zip
-#          resourceGroupName: $(serviceConnection)
-#          azureSubscription: $(serviceConnection)
-#          environment: '$(serviceConnection)-$(pushBranch)'
-#          appName: '$(appName)'
-#          notifyUsers: '$(notifyUsers)'
+    jobs:
+      - template: ./deploy.yml
+        parameters:
+          buildLocation: $(buildLocation)
+          resourceGroupName: $(serviceConnection)
+          azureSubscription: $(serviceConnection)
+          environment: '$(serviceConnection)-$(pushBranch)'
+          appName: '$(appName)'
+          notifyUsers: '$(notifyUsers)'
         
