@@ -5,12 +5,14 @@ name: $(Date:yyyyMMdd)$(Rev:.r)
 trigger:
   branches:
     include:
-      - main
+#      - alpha
+      - monolithic
   paths:
     exclude:
       - docs/*
 
 pr:
+#  - alpha
   - main
 
 resources:
@@ -20,47 +22,55 @@ variables:
   - template: variables.yaml
 
 stages:
-
-  - stage: TAG
-    displayName: Versioning Packages 
-    variables:
-          GH_TOKEN: $(GitHubToken)
-#         _NPM_TOKEN: $(NpmToken)
-    pool:
-        vmImage: 'vs2017-win2016'
-    jobs:
-      - template: ./versioning.yml
-        parameters:
-          GHToken: $(GH_TOKEN)
-
+#  - stage: Tag
+#    displayName: Get Tag
+#    pool:
+#        vmImage: 'vs2017-win2016'
+#    jobs:
+#      - job: release
+#        displayName: semantic release
+#        variables:
+#          GITHUB-TOKEN: $(_GITHUB_TOKEN)
+#          NPM-TOKEN: $(_NPM_TOKEN)
+#        steps:
+ #         - script:  >
+ #             npx 
+ #             -p semantic-release
+ #             -p @semantic-release/changelog
+ #             -p @semantic-release/git
+ #             -p semantic-release-ado
+ #             semantic-release
+#            displayName: 'Tag release'
+#            env: { GH_TOKEN: $(GITHUB-TOKEN), NPM_TOKEN: $(NPM-TOKEN) }
+#          
+#          - powershell: |
+#              echo "##vso[task.setvariable variable=versionNumber;isOutput=true]$(nextRelease)"
+#            name: setOutputVar
   - stage: CI
     displayName: Continuous Integration
-    dependsOn: TAG
-    variables:
-      _TAG: $[ stageDependencies.TAG.Tag.outputs['setOutputVar.Tag'] ]
-      _LTAG: $[ stageDependencies.TAG.Tag.outputs['setOutputVar.LTag'] ]
+#    dependsOn: Tag
+#    variables:
+#      _NEXT_RELEASE_TAG: $[ stageDependencies.Tag.release.outputs['setOutputVar.versionNumber'] ]
     pool:
-      vmImage: 'ubuntu-latest'
-
+      vmImage: Ubuntu-16.04
     jobs:
       - template: ./build.yml
         parameters:
-          tag: $(_TAG)
-          lastTag: $(_LTAG)
-      
-  - stage: CD
-    displayName: Continuous Deployment
-#    condition:
-    dependsOn: CI 
-    variables:
-      _TAG: $[ stageDependencies.TAG.Tag.outputs['setOutputVar.Tag'] ]
-    jobs:
-      - template: ./deploy.yml
-        parameters:
-          buildLocation: $(Pipeline.Workspace)/**/*.zip
-          resourceGroupName: $(serviceConnectionRG)
-          azureSubscription: $(serviceConnection)
-          environment: '$(pushBranch)'
-          appName: '$(appName)'
-          notifyUsers: '$(notifyUsers)'
-          tag: '$(_TAG)'
+          package: $(package)
+#          tag: $(_NEXT_RELEASE_TAG)
+
+#  - stage: CD
+#    displayName: Continuous Deployment
+#    variables:
+#      _NEXT_RELEASE_TAG: $[ stageDependencies.Tag.release.outputs['setOutputVar.versionNumber'] ]
+#    condition: 
+#    jobs:
+#      - template: ./deploy.yml
+#        parameters:
+#          buildLocation: $(Pipeline.Workspace)/**/*-$(_NEXT_RELEASE_TAG).zip
+#          resourceGroupName: $(serviceConnection)
+#          azureSubscription: $(serviceConnection)
+#          environment: '$(serviceConnection)-$(pushBranch)'
+#          appName: '$(appName)'
+#          notifyUsers: '$(notifyUsers)'
+        

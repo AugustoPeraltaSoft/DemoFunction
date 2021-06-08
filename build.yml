@@ -1,59 +1,35 @@
 parameters:
+  - name: 'package'
+    default: false
   - name: 'tag'
-  - name: 'lastTag'
 
 jobs:
   - job: Build
     steps:
-      - script: echo ${{ parameters.tag }} ~ ${{ parameters.lastTag }}
-        displayName: check variable
       # Build artifacts
       - script: yarn
         displayName: Install Packages
-#      - script: yarn lint
-#        displayName: linting
-      # Test just the changed packages
-#      - script: yarn test --since ${{ parameters.tag }}
-#        displayName: unit testing
-      # Build just the changed packages
-      - script: yarn run ci:build --since ${{ parameters.tag }}
+      - script: yarn lint
+        displayName: linting
+      - script: yarn test
+        displayName: unit testing
+      - script: yarn build
         displayName: build
+      # - script: yarn start:container && yarn test-integration
+      #   displayName: IntegrationTest
 
   - job: Package
-    dependsOn: Build
+    condition: and(succeeded(), eq(variables['package'], true))
     steps:
       # Run to package
-#      - script: yarn install --production
-#        displayName: prune dependencies
-#      - script: cp -R node_modules ./dist
-#        displayName: copy node modules
-
-      - script: npm i npm-pack-zip
-      # Create the files just for the changed packages, remove the --since flag if you want to zip all the packages
-      - script:  yarn run ci:zip --since ${{ parameters.tag }}
-
-      - task: DeleteFiles@1
-        inputs:
-          Contents: "node_modules"
-      - task: DeleteFiles@1
-        inputs:
-          Contents: "Tests"
+      - script: yarn install --production
+        displayName: prune dependencies
+      - script: cp -R node_modules ./dist
+        displayName: copy node modules
+      - script: yarn zip
       # publish package as artifact
-      - task: CopyFiles@2
+      - task: PublishPipelineArtifact@1
+        displayName: publish package
         inputs:
-          SourceFolder: '/home/vsts/work/1/s/packages/app'
-          Contents: '*.zip'
-          TargetFolder: '$(Build.ArtifactStagingDirectory)/functionapp'
-
-#      - task: ArchiveFiles@1
-#        inputs:
-#          rootFolder: "$(Build.ArtifactStagingDirectory)/functionapp"
-#          includeRootFolder: "false"
-#          archiveFile: "$(Build.ArtifactStagingDirectory)/functionapp.zip"
-
-      - task: PublishBuildArtifacts@1
-        inputs:
-          PathtoPublish: "$(Build.ArtifactStagingDirectory)/functionapp/"
-          ArtifactName: "app-${{ parameters.lastTag }}"
-          ArtifactType: "Container"
-
+          targetPath: '$(Pipeline.Workspace)'
+          artifact: 'build-${{ parameters.tag }}.zip'

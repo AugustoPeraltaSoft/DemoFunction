@@ -5,29 +5,17 @@ parameters:
   resourceGroupName: ''
   appName: ''
   notifyUsers: ''
-  tag: ''
 
 jobs:
-  - job: CheckingChanges
-    displayName: CheckingChanges
-    continueOnError: true
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps: 
-      - script: yarn
-        displayName: Install Packages
-      - script: yarn run changed | grep 'app'
 
   - job: CreateQASlot
-    dependsOn: CheckingChanges
-    condition: eq(dependencies.CheckingChanges.result,'Succeeded')
     displayName: QA Slot creation  
     pool:
-       vmImage: 'windows-latest'   
-    steps:
+        name: Hosted VS2017  
+    steps: 
       - task: AzureCLI@2
         inputs:
-          azureSubscription: ' ${{ parameters.azureSubscription }}'
+          azureSubscription: ${{ parameters.azureSubscription }}
           scriptType: 'ps'
           scriptLocation: 'inlineScript'
           inlineScript: 'az functionapp deployment slot create --name ${{ parameters.appName }} --resource-group ${{ parameters.resourceGroupName }} --slot QA'
@@ -35,7 +23,6 @@ jobs:
   - deployment: DeployApp
     displayName: deploy Function App
     dependsOn: CreateQASlot
-    condition: eq(dependencies.CheckingChanges.result,'Succeeded')
     pool:
       vmImage: 'Ubuntu-16.04'
     environment: ${{ parameters.environment }}
@@ -44,7 +31,7 @@ jobs:
 #        preDeploy:
 #          steps:
 #            - script: |
-#                echo It will grab tagged zip directory for app
+#                echo do all the things before deploy
         deploy:
           steps:
             - task: AzureFunctionApp@1
@@ -52,35 +39,33 @@ jobs:
               inputs:
                 azureSubscription: ${{ parameters.azureSubscription }}
                 resourceGroupName: ${{ parameters.resourceGroupName }}
-                appType: functionApp
+                appType: functionAppLinux
                 appName: ${{ parameters.appName }}
                 package: ${{ parameters.buildLocation }}
                 deployToSlotOrASE: true
                 slotName: QA
-
-  #Enable these steps when the smoke tests for the QA slot are created 
-        #postRouteTraffic:
-        #  steps:
-        #    - script: |
-        #        echo run the QA smoke test
-        # on:
-        #   failure:
-        #     steps: echo drop failed slot
-        #   success:
-        #     steps:
+ #Enable these steps when the smoke tests for the QA slot are created 
+      #  postRouteTraffic:
+      #    steps:
+      #      - script: |
+      #          echo run the QA smoke tests
+      #   on:
+      #     failure:
+      #       steps: echo check the smoke test failure on the QA slot
+      #     success: # Swap the QA slot with Prod
+      #       steps:
         #        - task: AzureAppServiceManage@0
         #          inputs:
         #            azureSubscription: ${{ parameters.azureSubscription }}
         #            Action: 'Swap Slots'
         #            WebAppName: ${{ parameters.appName }}
         #            ResourceGroupName: ${{ parameters.resourceGroupName }}
-        #            SourceSlot: 'QA'
+        #            SourceSlot: 'QA'      
 
 #Temporary jobs created for manual approval until QA smoke tests are created
   - job: waitForValidation
-    displayName: Wait for external validation  
-    dependsOn: DeployApp
-    condition: eq(dependencies.CheckingChanges.result,'Succeeded')  
+    displayName: Wait for external validation
+    dependsOn: DeployApp  
     pool: server    
     timeoutInMinutes: 4320 # job times out in 3 days
     steps:   
@@ -90,19 +75,14 @@ jobs:
           notifyUsers: ${{ parameters.notifyUsers }}
           instructions: 'Please validate the build configuration and resume'
 
-  - deployment: Swap
-    displayName: Swap to prod
-    dependsOn: waitForValidation  
-    condition: eq(dependencies.CheckingChanges.result,'Succeeded')
+  - deployment: SwapSlot
+    displayName: Swap with prod
+    dependsOn: waitForValidation
     pool:
-      name: Hosted VS2017
+      vmImage: 'Ubuntu-16.04'
     environment: ${{ parameters.environment }}
     strategy:
       runOnce:
-        preDeploy:
-          steps:
-            - script: |
-                echo do all the things before deploy
         deploy:
           steps:                
             - task: AzureAppServiceManage@0
@@ -111,7 +91,7 @@ jobs:
                 Action: 'Swap Slots'
                 WebAppName: ${{ parameters.appName }}
                 ResourceGroupName: ${{ parameters.resourceGroupName }}
-                SourceSlot: 'QA'
+                SourceSlot: 'QA' 
         on:
 #          failure:
 #            steps: echo drop failed slot
@@ -123,4 +103,4 @@ jobs:
                   Action: 'Delete Slot'
                   WebAppName: ${{ parameters.appName }}
                   ResourceGroupName: ${{ parameters.resourceGroupName }}
-                  Slot: 'QA'
+                  Slot: 'QA'   
