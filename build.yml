@@ -13,23 +13,53 @@ jobs:
 #        displayName: linting
 #      - script: yarn test
 #        displayName: unit testing
-#      - script: yarn build
-#        displayName: build
+      - script: yarn build
+        displayName: build
       # - script: yarn start:container && yarn test-integration
       #   displayName: IntegrationTest
 
-  - job: Package
+#  - job: Package
  #   condition: and(succeeded(), eq(variables['package'], true))
-    steps:
+#    steps:
       # Run to package
-      - script: yarn install --production
-        displayName: prune dependencies
-      - script: cp -R node_modules ./dist
-        displayName: copy node modules
-      - script: yarn zip
+#      - script: yarn install --production
+#        displayName: prune dependencies
+#      - script: cp -R node_modules ./dist
+#        displayName: copy node modules
+#      - script: yarn zip
       # publish package as artifact
-      - task: PublishPipelineArtifact@1
-        displayName: publish package
+#      - task: PublishPipelineArtifact@1
+#        displayName: publish package
+#        inputs:
+#          targetPath: '$(Pipeline.Workspace)'
+#          artifact: 'build.zip'
+
+
+      - script: npm i npm-pack-zip
+      # Create the files just for the changed packages, remove the --since flag if you want to zip all the packages
+      - script:  yarn run zip
+
+      - task: DeleteFiles@1
         inputs:
-          targetPath: '$(Pipeline.Workspace)'
-          artifact: 'build.zip'
+          Contents: "node_modules"
+      - task: DeleteFiles@1
+        inputs:
+          Contents: "Tests"
+      # publish package as artifact
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: '/home/vsts/work/1/s/packages/app'
+          Contents: '*.zip'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/functionapp'
+
+#      - task: ArchiveFiles@1
+#        inputs:
+#          rootFolder: "$(Build.ArtifactStagingDirectory)/functionapp"
+#          includeRootFolder: "false"
+#          archiveFile: "$(Build.ArtifactStagingDirectory)/functionapp.zip"
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: "$(Build.ArtifactStagingDirectory)/functionapp/"
+          ArtifactName: "app"
+          ArtifactType: "Container"
