@@ -4,7 +4,7 @@ variables:
   - name: serviceConnectionRG
     value: 'DemoNodeFunc'
   - name: serviceConnection
-    value: 'DemoNode'
+    value: 'DemoNodeFunc'
   - name: environment
     value: QA
   - name: appName
