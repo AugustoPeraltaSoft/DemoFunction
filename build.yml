@@ -9,12 +9,12 @@ jobs:
       # Build artifacts
       - script: yarn
         displayName: Install Packages
-      - script: yarn lint
-        displayName: linting
-      - script: yarn test
-        displayName: unit testing
-      - script: yarn build
-        displayName: build
+#      - script: yarn lint
+#        displayName: linting
+#      - script: yarn test
+#        displayName: unit testing
+#      - script: yarn build
+#        displayName: build
       # - script: yarn start:container && yarn test-integration
       #   displayName: IntegrationTest
 
