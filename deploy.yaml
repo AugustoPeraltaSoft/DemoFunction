@@ -44,6 +44,6 @@ jobs:
                 azureSubscription:  ${{ parameters.azureSubscription }}
                 scriptType: 'ps'
                 scriptLocation: 'inlineScript'
-                inlineScript: 'func azure functionapp publish empactisazurefunctionsprintinguat-uks --build remote'
-                workingDirectory: $(buildLocation)
+                inlineScript: 'func azure functionapp publish ${{ parameters.appName }} --build remote'
+                workingDirectory: ${{ parameters.buildLocation }}
                 failOnStandardError: true
