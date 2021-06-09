@@ -1,0 +1,49 @@
+parameters:
+  buildLocation: ''
+  environment: ''
+  azureSubscription: ''
+  resourceGroupName: ''
+  appName: ''
+  notifyUsers: ''
+
+jobs:
+
+  - job: CreateQASlot
+    displayName: QA Slot creation  
+    pool:
+        name: Hosted VS2017  
+    steps: 
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: ${{ parameters.azureSubscription }}
+          scriptType: 'ps'
+          scriptLocation: 'inlineScript'
+          inlineScript: 'az functionapp deployment slot create --name ${{ parameters.appName }} --resource-group ${{ parameters.resourceGroupName }} --slot QA'
+
+  - deployment: DeployApp
+    displayName: deploy Function App
+    dependsOn: CreateQASlot
+    pool:
+      vmImage: 'Ubuntu-16.04'
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+#        preDeploy:
+#          steps:
+#            - script: |
+#                echo do all the things before deploy
+        deploy:
+          steps:
+            - task: FuncToolsInstaller@0
+              displayName: 'Install Azure Functions Core Tools'
+              inputs:
+                version: 'latest'
+            - task: AzureCLI@2
+              displayName: 'func azure functionapp publish'
+              inputs:
+                azureSubscription:  ${{ parameters.azureSubscription }}
+                scriptType: 'ps'
+                scriptLocation: 'inlineScript'
+                inlineScript: 'func azure functionapp publish empactisazurefunctionsprintinguat-uks --build remote'
+                workingDirectory: $(buildLocation)
+                failOnStandardError: true

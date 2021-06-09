@@ -65,7 +65,7 @@ stages:
 #      _NEXT_RELEASE_TAG: $[ stageDependencies.Tag.release.outputs['setOutputVar.versionNumber'] ]
 #    condition: 
     jobs:
-      - template: ./deploy.yml
+      - template: ./deploy.yaml
         parameters:
           buildLocation: $(buildLocation)
           resourceGroupName: $(serviceConnection)
