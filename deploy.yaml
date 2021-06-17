@@ -34,16 +34,73 @@ jobs:
 #                echo do all the things before deploy
         deploy:
           steps:
-            - task: FuncToolsInstaller@0
-              displayName: 'Install Azure Functions Core Tools'
+            - task: AzureFunctionApp@1
+              displayName: Deploy to QA slot
               inputs:
-                version: 'latest'
-            - task: AzureCLI@2
-              displayName: 'func azure functionapp publish'
+                azureSubscription: ${{ parameters.azureSubscription }}
+                resourceGroupName: ${{ parameters.resourceGroupName }}
+                appType: functionAppLinux
+                appName: ${{ parameters.appName }}
+                package: ${{ parameters.buildLocation }}
+                deployToSlotOrASE: true
+                slotName: QA
+ #Enable these steps when the smoke tests for the QA slot are created 
+      #  postRouteTraffic:
+      #    steps:
+      #      - script: |
+      #          echo run the QA smoke tests
+      #   on:
+      #     failure:
+      #       steps: echo check the smoke test failure on the QA slot
+      #     success: # Swap the QA slot with Prod
+      #       steps:
+        #        - task: AzureAppServiceManage@0
+        #          inputs:
+        #            azureSubscription: ${{ parameters.azureSubscription }}
+        #            Action: 'Swap Slots'
+        #            WebAppName: ${{ parameters.appName }}
+        #            ResourceGroupName: ${{ parameters.resourceGroupName }}
+        #            SourceSlot: 'QA'      
+
+#Temporary jobs created for manual approval until QA smoke tests are created
+  - job: waitForValidation
+    displayName: Wait for external validation
+    dependsOn: DeployApp  
+    pool: server    
+    timeoutInMinutes: 4320 # job times out in 3 days
+    steps:   
+      - task: ManualValidation@0
+        timeoutInMinutes: 1440 # task times out in 1 day
+        inputs:
+          notifyUsers: ${{ parameters.notifyUsers }}
+          instructions: 'Please validate the build configuration and resume'
+
+  - deployment: SwapSlot
+    displayName: Swap with prod
+    dependsOn: waitForValidation
+    pool:
+      vmImage: 'Ubuntu-16.04'
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:                
+            - task: AzureAppServiceManage@0
               inputs:
-                azureSubscription:  ${{ parameters.azureSubscription }}
-                scriptType: 'ps'
-                scriptLocation: 'inlineScript'
-                inlineScript: 'func azure functionapp publish ${{ parameters.appName }} --build remote'
-                workingDirectory: ${{ parameters.buildLocation }}
-                failOnStandardError: true
+                azureSubscription: ${{ parameters.azureSubscription }}
+                Action: 'Swap Slots'
+                WebAppName: ${{ parameters.appName }}
+                ResourceGroupName: ${{ parameters.resourceGroupName }}
+                SourceSlot: 'QA' 
+        on:
+#          failure:
+#            steps: echo drop failed slot
+          success:
+            steps:
+              - task: AzureAppServiceManage@0
+                inputs:
+                  azureSubscription: ${{ parameters.azureSubscription }}
+                  Action: 'Delete Slot'
+                  WebAppName: ${{ parameters.appName }}
+                  ResourceGroupName: ${{ parameters.resourceGroupName }}
+                  Slot: 'QA'   
